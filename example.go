@@ -29,7 +29,7 @@ func example() {
 		os.Exit(1)
 	}
 
-	ch, errCh := heos.Recv()
+	ch, errCh := heos.EventStream()
 	for {
 		select {
 		case resp := <-ch:

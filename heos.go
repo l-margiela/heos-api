@@ -33,17 +33,17 @@ func (heos *Heos) Send(cmd Command, params map[string]string) error {
 	return err
 }
 
-// Recv provides channel with responses from the speaker.
+// EventStream provides channel with responses from the speaker.
 // Also provides error channel
-func (heos *Heos) Recv() (<-chan Response, <-chan error) {
+func (heos *Heos) EventStream() (<-chan Response, <-chan error) {
 	ch := make(chan Response)
 	errCh := make(chan error)
-	go heos.recv(ch, errCh)
+	go heos.eventStream(ch, errCh)
 
 	return ch, errCh
 }
 
-func (heos *Heos) recv(ch chan<- Response, errCh chan<- error) {
+func (heos *Heos) eventStream(ch chan<- Response, errCh chan<- error) {
 	for {
 		event := make([]byte, 10000)
 		if _, err := heos.conn.Read(event); err != nil {
