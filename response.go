@@ -3,6 +3,8 @@ package heosapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -59,10 +61,16 @@ func parseHeosCommand(cmd string) (Command, error) {
 
 func parseHeosMessage(msg string) (map[string]string, error) {
 	split := strings.Split(msg, "&")
+	if len(split) < 2 {
+		return map[string]string{}, nil
+	}
 
 	parsed := map[string]string{}
 	for _, pair := range split {
 		pairS := strings.SplitN(pair, "=", 2)
+		if len(pairS) != 2 {
+			return nil, fmt.Errorf("malformed message: %s", msg)
+		}
 
 		k := pairS[0]
 		v := pairS[1]
@@ -73,7 +81,38 @@ func parseHeosMessage(msg string) (map[string]string, error) {
 }
 
 // PayloadResp hold the second part of the device's response
-type PayloadResp interface{}
+type PayloadResp []map[string]string
+
+// UnmarshalJSON implements json.Unmarshaler interface
+func (payload *PayloadResp) UnmarshalJSON(raw []byte) error {
+	var resp []map[string]interface{}
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return err
+	}
+
+	payloadStr := PayloadResp{}
+	for _, e := range resp {
+		strMap := map[string]string{}
+		for k, v := range e {
+			nV, ok := v.(string)
+			if ok {
+				strMap[k] = nV
+				continue
+			}
+
+			nVf, ok := v.(float64)
+			if ok {
+				strMap[k] = strconv.FormatFloat(nVf, 'f', -1, 64)
+				continue
+			}
+			return fmt.Errorf("key %s: value not string nor float64: %v", k, v)
+		}
+		payloadStr = append(payloadStr, strMap)
+	}
+	*payload = payloadStr
+
+	return nil
+}
 
 func parseResponse(respRaw []byte) (Response, error) {
 	event := bytes.TrimRight(respRaw, "\x00")
