@@ -6,9 +6,9 @@ import (
 )
 
 func example() {
-	var heos Heos
+	heos := NewHeos("1.1.1.1:1255")
 
-	if err := heos.Connect("1.1.1.1:1255"); err != nil {
+	if err := heos.Connect(); err != nil {
 		fmt.Printf("connect: %s\n", err)
 		os.Exit(1)
 	}
@@ -19,24 +19,14 @@ func example() {
 		}
 	}()
 
-	if err := heos.Send(Command{
+	resp, err := heos.Send(Command{
 		Group:   "system",
-		Command: "register_for_change_events",
-	}, map[string]string{
-		"enable": "on",
-	}); err != nil {
+		Command: "heart_beat",
+	}, map[string]string{})
+	if err != nil {
 		fmt.Printf("send: %s\n", err)
 		os.Exit(1)
 	}
 
-	ch, errCh := heos.EventStream()
-	for {
-		select {
-		case resp := <-ch:
-			fmt.Printf("%#+v\n", resp)
-		case err := <-errCh:
-			fmt.Printf("receive: %s\n", err)
-			os.Exit(1)
-		}
-	}
+	fmt.Printf("%+v\n", resp)
 }
