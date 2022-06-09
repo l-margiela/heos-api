@@ -16,6 +16,6 @@ go get github.com/xaxes/heos-api
 
 ## LICENSE
 
-[WTFPL](http://www.wtfpl.net/).
+[BSD 3-Clause License](LICENSE).
 
 (Ends)
